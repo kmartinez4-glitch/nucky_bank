@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class HomeViewModel : ViewModel() {
-
+    // El estado inicial ahora tomará los 7 millones del modelo
     private val _uiState = MutableStateFlow(HomeModel())
     val uiState: StateFlow<HomeModel> = _uiState.asStateFlow()
 
@@ -18,12 +18,19 @@ class HomeViewModel : ViewModel() {
         val database = FirebaseDatabase.getInstance().getReference("usuarios")
 
         database.get().addOnSuccessListener { snapshot ->
-            var nombreEncontrado = cedula // fallback: si no encuentra el nombre muestra la cédula
+            var nombreEncontrado = cedula
+            var saldoEncontrado = 7000000.0 // Valor por defecto
 
             for (userSnapshot in snapshot.children) {
                 val dbCedula = userSnapshot.child("cedula").value.toString()
                 if (dbCedula == cedula) {
                     nombreEncontrado = userSnapshot.child("nombre").value.toString()
+
+                    // Si en Firebase ya existe un saldo guardado, lo usamos
+                    val dbSaldo = userSnapshot.child("saldo").value
+                    if (dbSaldo != null) {
+                        saldoEncontrado = dbSaldo.toString().toDouble()
+                    }
                     break
                 }
             }
@@ -31,7 +38,8 @@ class HomeViewModel : ViewModel() {
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    nombreUsuario = nombreEncontrado
+                    nombreUsuario = nombreEncontrado,
+                    saldo = saldoEncontrado // Aquí se actualiza la UI
                 )
             }
         }.addOnFailureListener {

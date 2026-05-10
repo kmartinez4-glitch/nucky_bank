@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">nucky-banck</string>
+    <string name="app_name">Nucky Banck</string>
+    <!-- TEXTOS -->
+    <string name="text_welcome">Bienvenido</string>
+    <string name="text_loading">Cargando...</string>
+    <!-- BOTONES -->
+    <string name="btn_accept">Aceptar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_logout">Cerrar sesión</string>
 </resources>

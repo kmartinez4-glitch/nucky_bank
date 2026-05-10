@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.room.ktx)
+    implementation("androidx.compose.material:material-icons-extended")
 
     // ── FIREBASE ──────────────────────────────────────────
     implementation("androidx.navigation:navigation-compose:2.7.7")
@@ -63,6 +64,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation(libs.androidx.material3)
     // ─────────────────────────────────────────────────────
 
     testImplementation(libs.junit)

@@ -1,9 +1,12 @@
 package com.example.proyect.nucky_banck.ui.login
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -13,227 +16,178 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.proyect.nucky_banck.R
+import com.example.proyect.nucky_banck.ui.components.NuckyTextField
+import com.example.proyect.nucky_banck.ui.components.ShowLoadingAlertDialog
+import com.example.proyect.nucky_banck.ui.components.ShowMessageAlertDialog
+import com.example.proyect.nucky_banck.ui.navigation.NavRoutes
+import com.example.proyect.nucky_banck.ui.theme.NuckyColors
 
-object NuckyColors {
-    val NavyBlue = Color(0xFF1A237E)
-    val DeepBlue = Color(0xFF283593)
-    val Emerald = Color(0xFF00897B)
-    val LightGray = Color(0xFFF5F5F5)
-    val TextDark = Color(0xFF212121)
-    val TextGray = Color(0xFF757575)
-    val ErrorRed = Color(0xFFD32F2F)
-    val White = Color(0xFFFFFFFF)
-}
+
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: (String) -> Unit = {}  // ✅ AGREGADO — recibe la cédula
+    navController: NavController,
+    onLoginSuccess: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showMessageAlert by remember { mutableStateOf(false) }
+    var titleDialog by remember { mutableStateOf("Error") }
+    var messageDialog by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
-    // ✅ MODIFICADO — ahora llama onLoginSuccess con la cédula
+    val focusManager = LocalFocusManager.current
+
+    if (uiState.isLoading) {
+        ShowLoadingAlertDialog()
+    }
+
+    if (showMessageAlert) {
+        ShowMessageAlertDialog(
+            onConfirmation = { showMessageAlert = false },
+            dialogTitle = titleDialog,
+            dialogText = messageDialog
+        )
+    }
+
     LaunchedEffect(uiState.loginSuccess) {
         if (uiState.loginSuccess) {
             onLoginSuccess(uiState.cedula)
         }
     }
 
+    LaunchedEffect(uiState.generalError) {
+        uiState.generalError?.let {
+            titleDialog = "Error de autenticación"
+            messageDialog = it
+            showMessageAlert = true
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .clickable(
+                indication = null,
+                interactionSource = remember {
+                    MutableInteractionSource()
+                }
+            ) {
+                focusManager.clearFocus()
+            }
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
+                Brush.verticalGradient(
+                    listOf(
                         NuckyColors.NavyBlue,
                         NuckyColors.DeepBlue
                     )
                 )
             )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            HeaderSection()
-            LoginCard(
-                uiState = uiState,
-                onCedulaChange = viewModel::onCedulaChange,
-                onPasswordChange = viewModel::onPasswordChange,
-                onLoginClick = viewModel::onLoginClicked
-            )
-        }
-    }
-}
-
-@Composable
-private fun HeaderSection() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 80.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "🏦", fontSize = 56.sp)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Nucky Bank",
-            color = NuckyColors.White,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Tu dinero, seguro y siempre disponible",
-            color = NuckyColors.White.copy(alpha = 0.75f),
-            fontSize = 14.sp
-        )
-    }
-}
-
-@Composable
-private fun LoginCard(
-    uiState: LoginModel,
-    onCedulaChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        colors = CardDefaults.cardColors(containerColor = NuckyColors.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
+    ){
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 28.dp, vertical = 36.dp)
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Bienvenido de nuevo",
-                color = NuckyColors.TextDark,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Ingresa tus datos para continuar",
-                color = NuckyColors.TextGray,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 28.dp)
-            )
-            NuckyTextField(
-                value = uiState.cedula,
-                onValueChange = onCedulaChange,
-                label = "Número de cédula",
-                leadingIcon = {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = NuckyColors.NavyBlue)
-                },
-                errorMessage = uiState.cedulaError,
-                keyboardType = KeyboardType.Number
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            NuckyTextField(
-                value = uiState.password,
-                onValueChange = onPasswordChange,
-                label = "Contraseña",
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = NuckyColors.NavyBlue)
-                },
-                errorMessage = uiState.passwordError,
-                isPassword = true
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            if (uiState.generalError != null) {
-                Text(
-                    text = uiState.generalError,
-                    color = NuckyColors.ErrorRed,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onLoginClick,
-                enabled = !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = NuckyColors.Emerald,
-                    disabledContainerColor = NuckyColors.Emerald.copy(alpha = 0.5f)
-                )
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        color = NuckyColors.White,
-                        modifier = Modifier.size(22.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(text = "Iniciar sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            TextButton(
-                onClick = { },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+            // HEADER
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 80.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "¿Olvidaste tu contraseña?",
-                    color = NuckyColors.NavyBlue,
+                    text = stringResource(id = R.string.text_welcome),
+                    fontSize = 42.sp,
+                    color = NuckyColors.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Nucky Bank",
+                    color = NuckyColors.White,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Tu dinero, seguro y disponible",
+                    color = NuckyColors.White.copy(alpha = 0.7f),
                     fontSize = 14.sp
                 )
             }
+
+            // CARD
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                colors = CardDefaults.cardColors(containerColor = NuckyColors.White)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(28.dp)) {
+                    Text(
+                        text = "Iniciar sesión",
+                        color = NuckyColors.TextDark,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    NuckyTextField(
+                        value = uiState.cedula,
+                        onValueChange = viewModel::onCedulaChange,
+                        label = "Número de cédula",
+                        keyboardType = KeyboardType.Number,
+                        leadingIcon = { Icon(Icons.Default.Person, null, tint = NuckyColors.NavyBlue) },
+                        errorMessage = uiState.cedulaError
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    NuckyTextField(
+                        value = uiState.password,
+                        onValueChange = viewModel::onPasswordChange,
+                        label = "Contraseña",
+                        isPassword = true,
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = NuckyColors.NavyBlue) },
+                        errorMessage = uiState.passwordError
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { viewModel.onLoginClicked() },
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NuckyColors.Emerald)
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = NuckyColors.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(text = "Iniciar sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Text(text = "¿No tienes cuenta?", color = NuckyColors.TextGray)
+                        TextButton(onClick = { navController.navigate(NavRoutes.REGISTER) }) {
+                            Text(text = "Regístrate", color = NuckyColors.NavyBlue, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
-}
-
-@Composable
-private fun NuckyTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    errorMessage: String? = null,
-    isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = leadingIcon,
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        isError = errorMessage != null,
-        supportingText = {
-            if (errorMessage != null) {
-                Text(text = errorMessage, color = NuckyColors.ErrorRed, fontSize = 12.sp)
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = NuckyColors.NavyBlue,
-            unfocusedBorderColor = Color(0xFFBDBDBD),
-            errorBorderColor = NuckyColors.ErrorRed,
-            focusedLabelColor = NuckyColors.NavyBlue
-        ),
-        singleLine = true
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen()
 }
